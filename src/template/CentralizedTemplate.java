@@ -1,6 +1,8 @@
+
 package template;
 
 //the list of imports
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -94,11 +96,11 @@ public class CentralizedTemplate {
             // Choose the next plan
             double randomNumber = r.nextDouble();
             double currentCost = currentPlan.computePlanCost(vArray);
-            if (minCost < currentCost){
+            if (minCost < currentCost) {
                 currentPlan = bestNeighbor;
                 lastImprovement = System.currentTimeMillis();
             }
-            if (randomNumber > prob && bestNeighbor!=null) {
+            if (randomNumber > prob && bestNeighbor != null) {
                 currentPlan = bestNeighbor;
             }
 
@@ -115,7 +117,7 @@ public class CentralizedTemplate {
                 currentPlan = finalPlan;
 
             // Check if we are stuck
-            if(System.currentTimeMillis() - lastImprovement > 5000){
+            if (System.currentTimeMillis() - lastImprovement > 5000) {
                 stop = true;
             }
 
@@ -126,6 +128,7 @@ public class CentralizedTemplate {
         // Print the final possiblePlan.
         System.out.println("Costs : [" + finalPlan.computePlanCost(vArray) + "]");
         finalPlan.print();
+        System.out.println("Number of iterations : " + nbIterations);
 
         long toc = System.currentTimeMillis();
         long duration = toc - tic;
@@ -153,7 +156,7 @@ public class CentralizedTemplate {
         MyPlan s = new MyPlan(vehicles.length);
         // Give all the tasks to this vehicle
         for (Task t : tasks)
-            s.addTask(maxVehicle.id(), t,0);
+            s.addTask(maxVehicle.id(), t, 0);
         return s;
     }
 
@@ -176,7 +179,7 @@ public class CentralizedTemplate {
         }
 
         return neighbors;*/
-        int i, j,nbActionsVehicles,index;
+        int i, j, nbActionsVehicles, index;
         Set<MyPlan> neighbors = new HashSet<MyPlan>();
         int switchNumber;
         switchNumber = r.nextInt(10);
@@ -184,19 +187,19 @@ public class CentralizedTemplate {
             i = r.nextInt(currentPlan.getNbVehicles());
             j = r.nextInt(currentPlan.getNbVehicles());
             nbActionsVehicles = currentPlan.getNbActionsVehicle(i);
-            if (nbActionsVehicles>1){
-                index = r.nextInt(nbActionsVehicles-1);
+            if (nbActionsVehicles > 1) {
+                index = r.nextInt(nbActionsVehicles - 1);
                 if (i != j) {
                     MyPlan neighbor = currentPlan.clone();
-                    neighbor = neighbor.interSwapTasks(i, j, index,0.20);
+                    neighbor = neighbor.interSwapTasks(i, j, index, 0.20);
                     neighbors.add(neighbor);
                     neighbors.addAll(intraChanges(neighbor));
                     neighbor = currentPlan.clone();
-                    neighbor = neighbor.interSwapTasks(i, j, index,0.50);
+                    neighbor = neighbor.interSwapTasks(i, j, index, 0.50);
                     neighbors.add(neighbor);
                     neighbors.addAll(intraChanges(neighbor));
                     neighbor = currentPlan.clone();
-                    neighbor = neighbor.interSwapTasks(i, j, index,0.70);
+                    neighbor = neighbor.interSwapTasks(i, j, index, 0.70);
                     neighbors.add(neighbor);
                     neighbors.addAll(intraChanges(neighbor));
                 }
@@ -212,7 +215,7 @@ public class CentralizedTemplate {
         int i, j;
         Set<MyPlan> neighbors = new HashSet<MyPlan>();
         for (int vehicleId = 0; vehicleId < currentPlan.getNbVehicles(); vehicleId++) {
-            int length =  currentPlan.getNbActionsVehicle(vehicleId);
+            int length = currentPlan.getNbActionsVehicle(vehicleId);
             if (length >= 2) {
                 int switchNumber;
                 switchNumber = r.nextInt(5);
