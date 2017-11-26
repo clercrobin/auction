@@ -33,6 +33,7 @@ public class AuctionTemplate implements AuctionBehavior {
     private Random random;
     private Vehicle vehicle;
     private List<Vehicle> vehicles;
+    private Vehicle[] vehicleArray;
     private City currentCity;
 
     private double toCompensate;
@@ -73,6 +74,8 @@ public class AuctionTemplate implements AuctionBehavior {
         this.timeout_bid = LogistPlatform.getSettings().get(LogistSettings.TimeoutKey.BID);
         this.timeout_plan = LogistPlatform.getSettings().get(LogistSettings.TimeoutKey.PLAN);
         this.ratio = 1.0 + 0.01 * (timeout_bid - timeout_plan) / timeout_bid;
+        Vehicle[] vehicleArray = new Vehicle[this.vehicles.size()];
+        this.vehicleArray = this.vehicles.toArray(vehicleArray);
     }
 
     @Override
@@ -85,6 +88,8 @@ public class AuctionTemplate implements AuctionBehavior {
         } else {
             this.lastwon = false;
         }
+        System.out.println("AUCTION_RESULT " + agent.id() + " " + winner + " "
+                + currentPlan.computePlanCost(vehicleArray));
     }
 
     @Override
@@ -94,7 +99,7 @@ public class AuctionTemplate implements AuctionBehavior {
         long boundary = tic + timeout_bid;
 
         Vehicle[] vehicleArray = new Vehicle[this.vehicles.size()];
-        vehicleArray = this.vehicles.toArray(vehicleArray);
+        this.vehicleArray = this.vehicles.toArray(vehicleArray);
 
         List<Task> nextCurrentTasks = new ArrayList<Task>(currentTasks);
         nextCurrentTasks.add(task);
@@ -132,7 +137,10 @@ public class AuctionTemplate implements AuctionBehavior {
 
         }
 
-        System.out.println("Bid : " + bid);
+        //System.out.println("Bid : " + bid);
+
+        System.out.println("ASK_PRICE " + agent.id() + " " + marginalPlan.computePlanCost(vehicleArray) + " "
+                + marginalCost + " " + task.pathLength() + " " + bid);
 
         return (long) Math.round(bid);
     }
