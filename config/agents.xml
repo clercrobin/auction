@@ -3,10 +3,48 @@
 <agents>
 	<!-- A list of agents and their behavior classes -->
 	
-	<!-- #### AUCTION AGENTS ### -->
-	<agent name="auction-random">
+
+	<agent name="auction-7">
 		<set class-path="bin/"/>
 		<set class-name="template.AuctionTemplate"/>
 	</agent>
-	
+
+	<agent name="auction-1">
+		<set class-path="bin/"/>
+		<set class-name="template.AuctionPierre"/>
+		<set strategy="fixed-ratio"/>
+		<set ratio="1.1"/>
+	</agent>
+	<agent name="auction-2">
+		<set class-path="bin/"/>
+		<set class-name="template.AuctionPierre"/>
+		<set strategy="adaptative-ratio-1"/>
+		<set ratio="1.0"/>
+	</agent>
+	<agent name="auction-3">
+		<set class-path="bin/"/>
+		<set class-name="template.AuctionPierre"/>
+		<set strategy="adaptative-ratio-1"/>
+		<set ratio="0.9"/>
+	</agent>
+	<agent name="auction-4">
+		<set class-path="bin/"/>
+		<set class-name="template.AuctionPierre"/>
+		<set strategy="adaptative-ratio-2"/>
+		<set ratio="1.0"/>
+	</agent>
+	<agent name="auction-5">
+		<set class-path="bin/"/>
+		<set class-name="template.AuctionPierre"/>
+		<set strategy="adaptative-ratio-2"/>
+		<set ratio="0.9"/>
+	</agent>
+	<agent name="auction-6">
+		<set class-path="bin/"/>
+		<set class-name="template.AuctionPierre"/>
+		<set strategy="learning"/>
+		<set ratio="1.0"/>
+		<set warm-up="3"/>
+		<set discount="0.9"/>
+	</agent>
 </agents>
