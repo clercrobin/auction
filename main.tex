@@ -14,12 +14,17 @@
 \begin{document}
 \maketitle
 
-\section{The optimization inside the agent}
+\section{Planner}
 
-The aim here is to optimize the repartition of the tasks between the vehicle in a centralized way to be the most cost efficient to be competitive against the opponents. We keep the idea of the previous exercise and improve it to take into account the timeout to take advantage of the whole time we are provided with.
-Moreover we construct less neighbors but in a more efficient way ; enabling us to do far more iterations and get a better final solution.
+We took some time to optimize our planner because it seems very important us that computing an efficient plan with a low cost is crucial if we want to have a good bidding strategy and be competitive. 
 
-Finally as we detected that our final plan was very sensitive to initial conditions we chose to set a limitation of 5000 iterations but to compute tis several time. It gives us far more stability in the computation of this best cost, it is crucial in order to enable us to set a strong bidding strategy
+We keep the algorithm of the previous assignment but thanks to the feedback of the assistants we made great improvements on it.
+
+Firstly, we improve the generation of neighbors so that it is faster and its duration is independent of the simulation parameters. This way it is easier to manage the duration of computations and avoid timeouts.
+
+Then, we also modify the stopping condition to stop before the timeout. We failed to do that correctly in the previous assignment.
+
+Finally, we observe that the local optimization was very sensitive to initial conditions. So instead of doing only one long run of stochastic optimization, we do several shorter runs and take the best solutions. This approach turned out to be way more reliable, it almost always gives good results.
 
 \section{Bidding strategy}
 
@@ -33,18 +38,17 @@ Furthermore we take into account the last result to update our ratio. If we won 
 
 Maybe we should take into account the distribution probability to compute the firsts marginal costs.
 
-\subsection{Pierre - Theory}
+\subsection{Pierre - Modeling}
 
 The core idea behind our bidding strategy is that we try to learn the bidding strategy of our adversaries. To do that, we model the bidding strategy of the adversary $i$ by a random variable $B_i$. The probability distribution we choose for $B_i$ is $B_i \sim l\mathcal{N}(\mu_i, \sigma_i)$ where $l$ is the path's length of the task we are bidding for. We choose this model because we think that the ratio of the bid over the path length ($\frac{b}{l}$) reflects the ability to optimize the cost to transport a task.
 
 Then we have to fit the parameters $\mu_i$ and $\sigma_i$ for each adversary. The naive solution is to minimize the negative log-likelihood. However with this method all previous rounds would have the same weight in the process of choosing the values for $\mu_i$ and $\sigma_i$. But as the strategy of the adversaries may evolve and their marginal cost to transport a task may decrease, this strategy does not seem good. Instead we choose to introduce a discount factor $\gamma$, in order to give more weight to the recent rounds. Thus, we use the following loss function:
-
 $$
 \mathcal{L}(\mu_i, \sigma_i) = \sum_{j=1}^{N}{\gamma^{N-i}\left(\frac{\frac{b_{i,j}}{l_j} - \mu_i}{2\sigma^2}\right)}
 $$
+where $b_{i,j}$ is the bid of the agent $i$ during the round $j$ and $N$ the number of rounds so far.
 
 We solve the system below to find the values of $\mu_i$ and $\sigma_i$ that minimize the cost function.
-
 $$
 \begin{array}{ccc}
 \frac{\partial \mathcal{L}}{\partial \mu_i} = 0 & 
@@ -54,7 +58,6 @@ $$
 $$
 
 And finally, we find:
-
 \begin{equation}
 \begin{array}{ccc}
 \mu_i = \frac{\sum_{j = 1}^{N}{\gamma^{N-i}\frac{b_{i,j}}{l_j}}}{\sum_{j = 1}^{N}{\gamma^{N-i}}} &
@@ -64,7 +67,7 @@ And finally, we find:
 \label{update}
 \end{equation}
 
-Now, we have access to a probability distributions that represent the bidding strategies of the opponents. We will use it to choose our bid. Precisely, we will bid the quantity $b^*_i$ that maximizes our expected reward i.e.:
+Now, we have access to probability distributions that represent the bidding strategies of the opponents. We will use it to choose our bid. Precisely, we will bid the quantity $b^*_i$ that maximizes our expected reward i.e.:
 
 \begin{equation}
 b^*_i = \text{argmax }\mathbb{E}(b\mathds{1}_{B_i > b}) = \text{argmax }bPr(B_i > b)
@@ -73,10 +76,11 @@ b^*_i = \text{argmax }\mathbb{E}(b\mathds{1}_{B_i > b}) = \text{argmax }bPr(B_i 
 
 \subsection{Pierre - Bidding strategy}
 
-However the strategy described above is not good for the first rounds for two reasons. The first one is that if we want the values $mu_i$ and $\sigma_i$ to be meaningful, we should have $N \geq 2$. The second one is that during the first rounds, we may want to be more aggressive to win the first tasks and thus to have a marginal cost that will be probably lower for later tasks.
+However the strategy described above is not good for the first rounds for two reasons. The first one is that if we want the values $\mu_i$ and $\sigma_i$ to be meaningful, we should have $N \geq 2$. The second one is that during the first rounds, we may want to be more aggressive to win the first tasks and thus to have a marginal cost that will be probably lower for later tasks.
 
-To to this, we introduce a parameter $N_{warm-up}$, such that when $N < N_{warm-up}$, we use the simpler and more aggressive strategy. And then, when $N \geq N_{warm-up}$ and we have enough information about the adversary bidding strategy, we use the method described above.
+To to this, we introduce a parameter $N_{warm-up}$, such that when $N < N_{warm-up}$, we use a simpler and more aggressive strategy. And then, when $N \geq N_{warm-up}$ and we have enough information about the adversary bidding strategy, we use the method described above.
 
+Here is our strategy's pseudo code:
 \begin{itemize}
 \item If $N < N_{warm-up}$, then bid $r \times marginal\_cost$
 \item Else
@@ -88,6 +92,8 @@ To to this, we introduce a parameter $N_{warm-up}$, such that when $N < N_{warm-
 \end{itemize}
 \end{itemize}
 
+To recap, in our strategy, there is a first phase during which we use a more aggressive strategy. Then after several rounds, we have enough information in order to predict the opponent's bidding and we use this information to try earning the maximum money. However during the second phase, the strategy is more prudent: we do not bid lower than our marginal cost.
+
 % describe in details your bidding strategy. Also, focus on answering the following questions:
 % - do you consider the probability distribution of the tasks in defining your strategy? How do you speculate about the future tasks that might be auctions?
 % - how do you use the feedback from the previous auctions to derive information about the other competitors?
@@ -97,15 +103,34 @@ To to this, we introduce a parameter $N_{warm-up}$, such that when $N < N_{warm-
 % in this section, you describe several results from the experiments with your auctioning agent
 
 \subsection{Experiment 1: Comparisons with dummy agents}
-% in this experiment you observe how the results depends on the number of tasks auctioned. You compare with some dummy agents and potentially several versions of your agent (with different internal parameter values). 
+% in this experiment you observe how the results depends on the number of tasks auctioned. You compare with some dummy agents and potentially several versions of your agent (with different internal parameter values).
 
 \subsubsection{Setting}
 % you describe how you perform the experiment, the environment and description of the agents you compare with
 
+We use the topology of England and two companies A and B with two vehicles each. 
+
+We write a script to compare the performance of the strategies we designed.
+The script pick the vehicles' capacities randomly in $\{20, ..., 100\}$, their cost per kilometer randomly in $\{3, ..., 8\}$ and the initial position of the vehicles randomly. Then the script launches the simulation, get the results, exchange the companies' vehicles and relaunch the simulation for fairness. It does so several times to get more reliable results.
+
 \subsubsection{Observations}
 % you describe the experimental results and the conclusions you inferred from these results
 
-\vdots
+In the table below, there are the results of the strategy described in the previous parts against dummies strategies that we have designed. The number we report in each cell is the total reward of our strategy minus the total reward of the dummy strategy over several runs.
+
+\begin{center}
+\begin{tabular}{|c|c|}
+\hline
+Strategy & \textit{best strategy} \\
+\hline
+\textit{fixed ratio} & 12725 \\
+\hline
+\textit{adaptive ratio 1} & 27658 \\
+\hline
+\textit{adaptive ratio 2} & 30191 \\
+\hline
+\end{tabular}
+\end{center}
 
 \subsection{Experiment n}
 % other experiments you would like to present (for example, varying the internal parameter values)
