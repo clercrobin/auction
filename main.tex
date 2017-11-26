@@ -55,26 +55,38 @@ $$
 
 And finally, we find:
 
-$$
+\begin{equation}
 \begin{array}{ccc}
 \mu_i = \frac{\sum_{j = 1}^{N}{\gamma^{N-i}\frac{b_{i,j}}{l_j}}}{\sum_{j = 1}^{N}{\gamma^{N-i}}} &
 \text{and} &
 \sigma_i = \frac{\sum_{j = 1}^{N}{\gamma^{N-i}\left(\frac{b_{i,j}}{l_j}-\mu_i\right)^2}}{\sum_{j = 1}^{N}{\gamma^{N-i}}} \\
 \end{array}
-$$
+\label{update}
+\end{equation}
 
-Now, we have access to a probability distributions that represent the bidding strategies of the opponents. We will use it to choose our bid. Precisely, we will bid the quantity $b^*$ that maximizes our expected reward i.e.:
+Now, we have access to a probability distributions that represent the bidding strategies of the opponents. We will use it to choose our bid. Precisely, we will bid the quantity $b^*_i$ that maximizes our expected reward i.e.:
 
-$$
-b^* = \text{argmax }\mathbb{E}(b\mathds{1}_{B_i > b}) = \text{argmax }bPr(B_i > b)
-$$
+\begin{equation}
+b^*_i = \text{argmax }\mathbb{E}(b\mathds{1}_{B_i > b}) = \text{argmax }bPr(B_i > b)
+\label{predict}
+\end{equation}
 
 \subsection{Pierre - Bidding strategy}
 
 However the strategy described above is not good for the first rounds for two reasons. The first one is that if we want the values $mu_i$ and $\sigma_i$ to be meaningful, we should have $N \geq 2$. The second one is that during the first rounds, we may want to be more aggressive to win the first tasks and thus to have a marginal cost that will be probably lower for later tasks.
 
-To to this, we introduce a parameter $N_{warm-up}$, such that when $N < N_{warm-up}$, we use the simpler and more aggressive strategy. And then, when $N \geq N_{warm-up}$ and we have enough strategy about the adversary bidding strategy, we use the method described above.
+To to this, we introduce a parameter $N_{warm-up}$, such that when $N < N_{warm-up}$, we use the simpler and more aggressive strategy. And then, when $N \geq N_{warm-up}$ and we have enough information about the adversary bidding strategy, we use the method described above.
 
+\begin{itemize}
+\item If $N < N_{warm-up}$, then bid $r \times marginal\_cost$
+\item Else
+\begin{itemize}
+	\item Update $\mu_i$ and $\sigma_i$ for every opponents using the formula \ref{update}
+	\item Compute $b^*_i$ for every opponents using the formula \ref{predict}
+	\item Compute $b^* = \text{argmin } b^*_i$
+	\item If $b^* \geq marginal\_cost$ then bid $b^*$ otherwise bid $marginal\_cost$
+\end{itemize}
+\end{itemize}
 
 % describe in details your bidding strategy. Also, focus on answering the following questions:
 % - do you consider the probability distribution of the tasks in defining your strategy? How do you speculate about the future tasks that might be auctions?
