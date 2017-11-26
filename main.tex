@@ -1,8 +1,10 @@
 \documentclass[11pt]{article}
 
 \usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{dsfont}
 \usepackage{textcomp}
-\usepackage[top=0.8in, bottom=0.8in, left=0.8in, right=0.8in]{geometry}
+%\usepackage[top=0.8in, bottom=0.8in, left=0.8in, right=0.8in]{geometry}
 % add other packages here
 
 % put your group number and names in the author field
@@ -21,7 +23,7 @@ Finally as we detected that our final plan was very sensitive to initial conditi
 
 \section{Bidding strategy}
 
-For each new task we start by computing the marginal cost with respect to the list of task we already have, then we multiply it by a ratio reflecting our strategy.
+For each new task we start by computing the marginal cost with respect to the list of tasks we already have, then we multiply it by a ratio reflecting our strategy.
 
 Our initial ratio is $1+0.01 \frac{timeout_{bid}-timeout_{plan}}{timeout_{bid}}$ Indeed we consider that thanks to more time to compute the final plan we will be able to be even more efficient.
 
@@ -30,6 +32,49 @@ Moreover, we observed that often, once we have a first task, the marginal cost o
 Furthermore we take into account the last result to update our ratio. If we won the last bid then we are likely to be able to win even if we keep a bigger margin, so we can improve our ratio by 1 percent. On the opposite if we lost the last bid, we should reduce our ratio.
 
 Maybe we should take into account the distribution probability to compute the firsts marginal costs.
+
+\subsection{Pierre - Theory}
+
+The core idea behind our bidding strategy is that we try to learn the bidding strategy of our adversaries. To do that, we model the bidding strategy of the adversary $i$ by a random variable $B_i$. The probability distribution we choose for $B_i$ is $B_i \sim l\mathcal{N}(\mu_i, \sigma_i)$ where $l$ is the path's length of the task we are bidding for. We choose this model because we think that the ratio of the bid over the path length ($\frac{b}{l}$) reflects the ability to optimize the cost to transport a task.
+
+Then we have to fit the parameters $\mu_i$ and $\sigma_i$ for each adversary. The naive solution is to minimize the negative log-likelihood. However with this method all previous rounds would have the same weight in the process of choosing the values for $\mu_i$ and $\sigma_i$. But as the strategy of the adversaries may evolve and their marginal cost to transport a task may decrease, this strategy does not seem good. Instead we choose to introduce a discount factor $\gamma$, in order to give more weight to the recent rounds. Thus, we use the following loss function:
+
+$$
+\mathcal{L}(\mu_i, \sigma_i) = \sum_{j=1}^{N}{\gamma^{N-i}\left(\frac{\frac{b_{i,j}}{l_j} - \mu_i}{2\sigma^2}\right)}
+$$
+
+We solve the system below to find the values of $\mu_i$ and $\sigma_i$ that minimize the cost function.
+
+$$
+\begin{array}{ccc}
+\frac{\partial \mathcal{L}}{\partial \mu_i} = 0 & 
+\text{and} &
+\frac{\partial \mathcal{L}}{\partial \sigma_i} = 0 \\
+\end{array}
+$$
+
+And finally, we find:
+
+$$
+\begin{array}{ccc}
+\mu_i = \frac{\sum_{j = 1}^{N}{\gamma^{N-i}\frac{b_{i,j}}{l_j}}}{\sum_{j = 1}^{N}{\gamma^{N-i}}} &
+\text{and} &
+\sigma_i = \frac{\sum_{j = 1}^{N}{\gamma^{N-i}\left(\frac{b_{i,j}}{l_j}-\mu_i\right)^2}}{\sum_{j = 1}^{N}{\gamma^{N-i}}} \\
+\end{array}
+$$
+
+Now, we have access to a probability distributions that represent the bidding strategies of the opponents. We will use it to choose our bid. Precisely, we will bid the quantity $b^*$ that maximizes our expected reward i.e.:
+
+$$
+b^* = \text{argmax }\mathbb{E}(b\mathds{1}_{B_i > b}) = \text{argmax }bPr(B_i > b)
+$$
+
+\subsection{Pierre - Bidding strategy}
+
+However the strategy described above is not good for the first rounds for two reasons. The first one is that if we want the values $mu_i$ and $\sigma_i$ to be meaningful, we should have $N \geq 2$. The second one is that during the first rounds, we may want to be more aggressive to win the first tasks and thus to have a marginal cost that will be probably lower for later tasks.
+
+To to this, we introduce a parameter $N_{warm-up}$, such that when $N < N_{warm-up}$, we use the simpler and more aggressive strategy. And then, when $N \geq N_{warm-up}$ and we have enough strategy about the adversary bidding strategy, we use the method described above.
+
 
 % describe in details your bidding strategy. Also, focus on answering the following questions:
 % - do you consider the probability distribution of the tasks in defining your strategy? How do you speculate about the future tasks that might be auctions?
